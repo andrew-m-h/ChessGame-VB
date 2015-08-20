@@ -1,0 +1,15 @@
+c:\users\andrew\documents\visual studio 2013\Projects\ChessGame\ChessGame\bin\Debug\ChessGame.exe.config
+c:\users\andrew\documents\visual studio 2013\Projects\ChessGame\ChessGame\obj\Debug\ChessGame.frmDeleteGame.resources
+c:\users\andrew\documents\visual studio 2013\Projects\ChessGame\ChessGame\obj\Debug\ChessGame.frmGame.resources
+c:\users\andrew\documents\visual studio 2013\Projects\ChessGame\ChessGame\obj\Debug\ChessGame.frmLoad.resources
+c:\users\andrew\documents\visual studio 2013\Projects\ChessGame\ChessGame\obj\Debug\ChessGame.frmMain.resources
+c:\users\andrew\documents\visual studio 2013\Projects\ChessGame\ChessGame\obj\Debug\ChessGame.frmNewGame.resources
+c:\users\andrew\documents\visual studio 2013\Projects\ChessGame\ChessGame\obj\Debug\ChessGame.frmPawnSelection.resources
+c:\users\andrew\documents\visual studio 2013\Projects\ChessGame\ChessGame\obj\Debug\ChessGame.Resources.resources
+c:\users\andrew\documents\visual studio 2013\Projects\ChessGame\ChessGame\obj\Debug\ChessGame.vbproj.GenerateResource.Cache
+c:\users\andrew\documents\visual studio 2013\Projects\ChessGame\ChessGame\bin\Debug\ChessGame.exe
+c:\users\andrew\documents\visual studio 2013\Projects\ChessGame\ChessGame\bin\Debug\ChessGame.pdb
+c:\users\andrew\documents\visual studio 2013\Projects\ChessGame\ChessGame\bin\Debug\ChessGame.xml
+c:\users\andrew\documents\visual studio 2013\Projects\ChessGame\ChessGame\obj\Debug\ChessGame.exe
+c:\users\andrew\documents\visual studio 2013\Projects\ChessGame\ChessGame\obj\Debug\ChessGame.xml
+c:\users\andrew\documents\visual studio 2013\Projects\ChessGame\ChessGame\obj\Debug\ChessGame.pdb
