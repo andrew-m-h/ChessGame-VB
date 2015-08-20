@@ -1,0 +1,1402 @@
+'Imports System.IO for use in creating a text file
+'Allows Visuall Basic to interface with the Operating System and provides certain functionality akin to that of the Command Prompt
+Imports System.IO
+Public Class frmNewGame
+    Public game_title As String
+    Dim txtP1name, txtP2name, txtGameName As New TextBox
+    Dim lblP1name, lblP2name, lblGameName As New Label
+    Dim txt_array(3) As TextBox
+    Dim lbl_array(3) As Label
+    Dim btnCreate, btnCancel, btnHelp As New Button
+
+    Private Sub frmNewGame_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        'This creates the form on startup
+        fill_control_arrays()   'Fill the control array
+        create_board()          'Output the controls onto the form
+    End Sub
+
+    Private Sub Help_Click(sender As Object, e As EventArgs)
+
+    End Sub
+
+    Private Sub Cancel_Click(sender As Object, e As EventArgs)
+        'Return to the main screen
+        Me.Hide()
+        frmMain.Show()
+    End Sub
+
+    Private Sub Create_Click(sender As Object, e As EventArgs)
+        'This activates when the create new game button is clicked
+        'It gets the values of the textboxes, validates them and creates a new save file
+        Dim valid As Boolean = True                 'Assume true
+        Dim error1, error2, error3 As String        'These store text for the three errors that can result from incorrect data entry
+        get_details(valid, error1, error2, error3)  'These are all ByRef so they will be changed by the get_details sub
+        If valid Then                               'Valid means that all three data values are correct
+            save_to_file()                          'Create a new save file with the title of the game
+            frmGame.Show()                          'Show the game form
+            Me.Close()                              'Close this form
+        Else
+            MsgBox(error1 & vbNewLine & error2 & vbNewLine & error3) 'Return any of the errors that occured with data entry
+        End If
+    End Sub
+
+    Private Sub get_details(ByRef valid, ByRef error1, ByRef error2, ByRef error3)
+        'This sub must get the balues from the three text boxes and validate them
+        Dim temp_p1name, temp_p2name, temp_gametitle As String      'These store temporary output from the text boxes
+        temp_p1name = txtP1name.Text                                'Get the output
+        temp_p2name = txtP2name.Text
+        temp_gametitle = txtGameName.Text
+        If validate_initials(temp_p1name) Then                      'This validates the initials that were entered
+            frmGame.p1name = CStr(temp_p1name)                      'This sets the publick p1name to the value entered
+        Else
+            error1 = "The Initials entered for Player 1 are invalid" 'Set error1 to this text because the data was entered incorrectly
+            txtP1name.Clear()                                       'Clear the textbox
+            valid = False                                           'Valid is set to false to indicate that at least one value was wrong
+        End If
+        If validate_initials(temp_p2name) Then                      'Validate the initials entered for player 2
+            frmGame.p2name = CStr(temp_p2name)
+        Else
+            error2 = "The Initials entered for Player 2 are invalid"
+            txtP2name.Clear()
+            valid = False
+        End If
+        If validate_game(temp_gametitle) Then                       'Validate the game name that was entered against different criteria
+            game_title = CStr(temp_gametitle)
+        Else
+            error3 = "Title for the game is invalid"
+            txtGameName.Clear()
+            valid = False
+        End If
+    End Sub
+
+    Private Sub create_board()
+        'This sub must create the board which consists of 3 text boxes, 3 labels and 3 buttons
+        Dim x_coordinate, y_coordinate As Integer                                   'neither x or y are constant
+        Me.Size = New System.Drawing.Size(430, 300)                                 'set the size of the board
+        Me.Text = "New Game"                                                        'set the text of the board
+        Me.Location = New System.Drawing.Point(700, 350)                            'set the location of the board
+        x_coordinate = 40
+        y_coordinate = 150
+        For i = 1 To 3                                                              'the text boxes and lables are in arrays
+            x_coordinate = x_coordinate + 200                                       'x changes for the textboxes and lables by 200
+            With txt_array(i)
+                .Size = New System.Drawing.Size(100, 70)
+                .Location = New System.Drawing.Point(x_coordinate, y_coordinate)
+            End With
+            x_coordinate = x_coordinate - 200                                       'This resets x for the labels
+            With lbl_array(i)                                                       'Set the values for the labels
+                .Size = New System.Drawing.Size(165, 50)
+                .Location = New System.Drawing.Point(x_coordinate, y_coordinate)
+                .Font = New System.Drawing.Font("standard", 13, FontStyle.Regular)
+                Select Case i                                                       'The text needs to be one of three values, so a multiway selection is used
+                    Case 1 : .Text = "Game Name"
+                    Case 2 : .Text = "Player 1 Name"
+                    Case 3 : .Text = "Player 2 Name"
+                End Select
+            End With
+            y_coordinate = y_coordinate - 40
+            Me.Controls.Add(lbl_array(i))                                           'Add both the lables and text boxes to the controls
+            Me.Controls.Add(txt_array(i))
+        Next
+        With btnCreate                                                              'deal with the three buttons that are used
+            .Location = New System.Drawing.Point(130, 200)
+            .Size = New System.Drawing.Size(100, 40)
+            .Text = "Create Game"
+        End With
+        With btnCancel
+            .Location = New System.Drawing.Point(240, 200)
+            .Size = New System.Drawing.Size(100, 40)
+            .Text = "Cancel"
+        End With
+        With btnHelp
+            .Location = New System.Drawing.Point(20, 200)
+            .Size = New System.Drawing.Size(100, 40)
+            .Text = "Help"
+        End With
+        'Add the click events to the buttons
+        AddHandler btnHelp.Click, AddressOf Help_Click
+        AddHandler btnCreate.Click, AddressOf Create_Click
+        AddHandler btnCancel.Click, AddressOf Cancel_Click
+        'Add buttons to the controls
+        Me.Controls.Add(btnHelp)
+        Me.Controls.Add(btnCreate)
+        Me.Controls.Add(btnCancel)
+    End Sub
+
+    Private Sub save_to_file()
+        'This creates a new textfile with the name of game_title + ".txt"
+        Dim path As String = Application.StartupPath & "\saved games\" & game_title & ".txt"    'The path is declared here to shorten the next statment
+        Dim fs As FileStream = File.Create(path)                                                'This uses the import IO module to create a file in the location given
+        fs.Close()                                                                              'Close the file
+    End Sub
+
+    Private Sub fill_control_arrays()
+        'Fill the two control arrays that hold the text boxes and labels
+        'input text boxes
+        txt_array(1) = txtGameName
+        txt_array(2) = txtP1name
+        txt_array(3) = txtP2name
+
+        'input labels
+        lbl_array(1) = lblGameName
+        lbl_array(2) = lblP1name
+        lbl_array(3) = lblP2name
+    End Sub
+
+    Private Function validate_game(candidate As String) As Boolean
+        'This sub is designed to validate a given game title
+        'A game title is valid is it has only upper & lower case letter
+        'Or numbers
+
+        'This is a lambda function that takes an ascii code and checks that it is within an acceptable range
+        'That is between 48 & 57 or between 65 & 90 or between 97 & 122
+        'It is a good way to avoid large boolean computations within an if statment
+        Dim valid = Function(x) (x >= 48 And x <= 57) Or (x >= 65 And x <= 90) Or (x >= 97 And x <= 122)
+
+        For Each character In candidate             'Cycle through each character in the candidate
+            If Not valid(Asc(character)) Then       'Check the ascii code using the valid function
+                Return False                        'Return false if any of the characters are invalid
+            End If
+        Next
+        Return True                                 'Return True in all other cases
+    End Function
+
+    Private Function validate_initials(initials As String) As Boolean
+        'This function will take a string and return a boolean indicating wether it meets the criteria of initials
+        'initials are defined as at least one character in length, no more than 5 characters in length
+        'all characters are capital letters of the english alphabet (ascii 65 to 90)
+        If IsNothing(initials) Then                     'checks that nothing is not entered
+            Return False
+        End If
+        If Len(initials) < 1 Or Len(initials) > 5 Then  'checks the length of the input
+            Return False
+        End If
+        For Each i In initials                          'cycles through each character initials
+            If Asc(i) < 65 Or Asc(i) > 90 Then          'checks that the characters ascii number is that of a capital letter
+                Return False
+            End If
+        Next
+        Return True                                     'return true in all other cases
+    End Function
+
+End Class
+
+
+==========================================================================================
+
+
+Imports System.IO
+Public Class frmGame
+    Public board(8, 8) As String
+    Dim origin, destination, winner As String
+    Public turn As String
+    Dim click_counter As Integer
+    Public p1score, p2score As Integer
+    Public p1name, p2name As String
+    Dim title As String
+    Dim picbox_array(8, 8) As PictureBox
+    Dim lable_array(8, 2) As Label
+    Dim game_ended As Boolean = False
+    'These are objects are used in the form creation
+    Dim picbox1, picbox2, picbox3, picbox4, picbox5, picbox6, picbox7, picbox8, picbox9, picbox10, picbox11, picbox12, picbox13, picbox14, picbox15, picbox16, picbox17, picbox18, picbox19, picbox20, _
+picbox21, picbox22, picbox23, picbox24, picbox25, picbox26, picbox27, picbox28, picbox29, picbox30, picbox31, picbox32, picbox33, picbox34, picbox35, picbox36, picbox37, picbox38, picbox39, picbox40, _
+picbox41, picbox42, picbox43, picbox44, picbox45, picbox46, picbox47, picbox48, picbox49, picbox50, picbox51, picbox52, picbox53, picbox54, picbox55, picbox56, picbox57, picbox58, picbox59, picbox60, _
+picbox61, picbox62, picbox63, picbox64 As New PictureBox 'used when programmatically creating the board
+    Dim lstScores As New ListBox 'these list boxes display a list of the pieces that have been lost by each player
+    Dim lstP1Grave, lstP2Grave As New ListBox
+    Dim btnRestart, btnQuit, btnHelp, btnSave As New Button 'these buttons are used to perform various tasks
+    Dim lblA, lblB, lblC, lblD, lblE, lblF, lblG, lblH, lbl1, lbl2, lbl3, lbl4, lbl5, lbl6, lbl7, lbl8 As New Label 'lables used to display co-ordinates
+    Dim lblP1Score, lblP2Score As New Label 'display the scores of two players
+    Dim lblTurn As New Label 'tells the players who's turn it is
+    Dim lblP1Heading, lblP2heading As New Label
+    Dim lblScoresHeading As New Label
+    Private Sub frmGame_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        'This activates when the form loads
+        'Builds the form and the controls, fills the board array and outputs the board onto the screen
+        fill_control_arrays()                   'Fills the control arrays that are used to group screen elements
+        create_board()                          'Dynamically creates the board for ease of manipulation
+        If Not frmMain.game_loaded Then
+            fill_board()                        'Fills the board array with the starting layout
+            title = frmNewGame.game_title
+            save_game(title)                    'This saves the new game to a game file in it's starting position
+            turn = "p1"                         'sets the starting value of turn
+        Else
+            If frmMain.p1grave.Length <> 0 Then 'This only activates if the public grave array is not empty
+                For Each i In frmMain.p1grave   'This cycles through the array and puts the contents into the appropriate listbox
+                    update_grave(i)
+                Next
+            End If
+            If frmMain.p2grave.Length <> 0 Then
+                For Each i In frmMain.p2grave
+                    update_grave(i)
+                Next
+            End If
+            title = frmNewGame.game_title       'This sets the title to the public variable game_title
+        End If
+        display_board()                         'outputs the board in it's starting position
+    End Sub
+
+    Private Sub Action_Click(ByVal sender As Object, ByVal e As EventArgs)
+        'This sub is activated by clicking any of the pictureboxes that make up the board
+        Dim clicked As PictureBox                   'clicked will be the picbox that was clicked
+        clicked = sender                            'assigns clicked to the picturebox that activated the sub
+        clicked.BorderStyle = BorderStyle.Fixed3D   'highlights the selected tile
+        click_counter = click_counter + 1
+        If click_counter = 1 Then
+            origin = clicked.Name                   'This sets the origin variable to the value of the first tile clicked click
+        End If
+        If click_counter = 2 Then
+            destination = clicked.Name
+            make_move()                             'makes the move given both the origin and destination picboxes
+            click_counter = 0                       'resets click counter to 0
+            swap(turn)                              'switches the players turn
+        End If
+    End Sub
+
+    Private Sub Save_Click(ByVal sender As Object, ByVal e As EventArgs)
+        save_game(title)            'This re-writes the game file with the new data
+        MsgBox("Game Saved")
+    End Sub
+
+    Private Sub Restart_Click(ByVal sender As Object, ByVal e As EventArgs)
+        restart_game()              'This will reset the game board and the game
+    End Sub
+
+    Private Sub Help_Click(ByVal sender As Object, ByVal e As EventArgs)
+        MsgBox("This'll learn ya!")
+    End Sub
+
+    Private Sub Quit_Click(ByVal sender As Object, ByVal e As EventArgs)
+        'This redirects the user to the main form instead of actually quitting
+        frmMain.game_loaded = False 'This sets the game_loaded boolean to false for later use
+
+        frmMain.Show()
+        Me.Close()
+    End Sub
+
+    Private Sub swap(ByRef turn)
+        'This sub is used to change the turn variable
+        If turn = "p1" Then
+            turn = "p2"
+        Else
+            turn = "p1"
+        End If
+    End Sub
+
+    Private Sub create_board()
+        'This sub programmatically creates the 8*8 square board of pictureboxes
+        'This is quicker and easier than manual creation
+        'Allows for easy bulk manipulation of the pictureboxes
+        Me.Size = New System.Drawing.Size(1300, 1000)   'sets the size of the form on the screen  
+        Me.Location = New System.Drawing.Point(330, 0)  'sets the location on the screen where the form loads
+        create_tiles()                                  'creates the tiles that make up the board
+        create_buttons()                                'creates the buttons that are used on the form
+        create_lables()                                 'creates the lables that run along the edge of the board
+        create_listboxes()                              'creates the listboxes that are used on the form
+    End Sub
+
+    Private Sub create_tiles()
+        'Create the 8 * 8 board of pictureboxes that are used to display the pieces
+        'The boxes are in a picturebox array for ease of manipulation
+        Dim x_coordinate, y_coordinate As Integer
+        For x = 1 To 8                                          'Cycles throught the two dimensional array "picbox_array" and defines the objects within
+            For y = 1 To 8
+                x_coordinate = 110 + (x - 1) * 95               'This seperates the pictureboxes by 95 pixles in the x axis
+                y_coordinate = 270 + (y - 1) * 95               'This seperates the picthreboxes by 95 pixles in the y axis
+                With picbox_array(y, x)                         'for some reason, VB uses (y, x) instead of (x, y)
+                    .Name = "picTile" & ((x - 1) * 8 + y)       'This will name the picture box "picTile" + n where n is an integer
+                    .Size = New System.Drawing.Point(95, 95)    'The size will be all the same, almost square
+                    .Location = New System.Drawing.Point(y_coordinate, x_coordinate)
+                End With
+                Me.Controls.Add(picbox_array(y, x))             'Add picbox to the controls
+                AddHandler picbox_array(y, x).Click, AddressOf Action_Click 'link button click to action click sub
+            Next y
+        Next x
+    End Sub
+
+    Private Sub create_buttons()
+        'Creates the buttons that are used on the form
+        'This sub must add click events as well as define the buttons features
+        Dim x_coordinate As Integer
+        Const y_coordinate = 900                                            'The y co-ordinate is constant for all the buttons
+        x_coordinate = 955
+        With btnSave                                                        'This defines the button btnSave
+            .Size = New System.Drawing.Size(75, 35)
+            .Text = "Save"
+            .Location = New System.Drawing.Point(x_coordinate, y_coordinate)
+        End With
+        x_coordinate = x_coordinate + 80                                    'The x_coordinate is incremented by 80 to allow for a 5 pixle gap
+        With btnHelp                                                        'This defines the button btnHelp
+            .Size = New System.Drawing.Size(75, 35)
+            .Text = "Help"
+            .Location = New System.Drawing.Point(x_coordinate, y_coordinate)
+        End With
+        x_coordinate = x_coordinate + 80
+        With btnRestart                                                     'This defines the button btnRestart
+            .Size = New System.Drawing.Size(75, 35)
+            .Text = "Restart"
+            .Location = New System.Drawing.Point(x_coordinate, y_coordinate)
+        End With
+        x_coordinate = x_coordinate + 80
+        With btnQuit                                                        'This defines the button btnQuit
+            .Size = New System.Drawing.Size(75, 35)
+            .Text = "Quit"
+            .Location = New System.Drawing.Point(x_coordinate, y_coordinate)
+        End With
+
+        'Add buttons to controls
+        Me.Controls.Add(btnSave)
+        Me.Controls.Add(btnHelp)
+        Me.Controls.Add(btnRestart)
+        Me.Controls.Add(btnQuit)
+        'assign buttons to click events
+        AddHandler btnSave.Click, AddressOf Save_Click
+        AddHandler btnHelp.Click, AddressOf Help_Click
+        AddHandler btnRestart.Click, AddressOf Restart_Click
+        AddHandler btnQuit.Click, AddressOf Quit_Click
+    End Sub
+
+    Private Sub create_lables()
+        'Create the lables that go across the top and down the side of the board
+        'letters go across the top of the board
+        Dim x_coordinate, y_coordinate As Integer
+        For x = 1 To 8
+            x_coordinate = 305 + (x - 1) * 95                                       'The x co-ordinate changes by 95 pixles
+            y_coordinate = 85                                                       'the y co-ordinate is stationary, this creates a straight line
+            With lable_array(x, 2)                                                  'define the lable properties
+                .Location = New System.Drawing.Point(x_coordinate, y_coordinate)
+                .Text = Chr(64 + x)                                                 'The ascii character cor the capital letter relating to the number (1 = A, 2 = B)
+                .Size = New System.Drawing.Size(70, 30)                             'The lable size
+                .Font = New System.Drawing.Font("standard", 12, FontStyle.Regular)  'The font and text size
+            End With
+            Me.Controls.Add(lable_array(x, 2))                                      'Add to the controls
+        Next x
+        'numbers go down the left side of the board
+        For y = 1 To 8
+            x_coordinate = 250                                                       'The x co-ordinate is stationary
+            y_coordinate = 145 + (y - 1) * 95                                       'The y co-ordinate increments by 95, starting at 145 pixles in
+            With lable_array(y, 1)
+                .Location = New System.Drawing.Point(x_coordinate, y_coordinate)
+                .Text = y
+                .Size = New System.Drawing.Size(50, 30)
+                .Font = New System.Drawing.Font("standard", 12, FontStyle.Regular)
+            End With
+            Me.Controls.Add(lable_array(y, 1))                                      'Add lable to the controls
+        Next y
+
+        'create the lables that display the players score
+        With lblP1Score
+            .Text = p1name & " : 0"
+            .Location = New System.Drawing.Point(70, 150)
+            .Size = New System.Drawing.Size(130, 25)
+            .Font = New System.Drawing.Font("standard", 12, FontStyle.Regular)
+        End With
+        With lblP2Score
+            .Text = p2name & " : 0"
+            .Location = New System.Drawing.Point(70, 400)
+            .Size = New System.Drawing.Size(130, 25)
+            .Font = New System.Drawing.Font("standard", 12, FontStyle.Regular)
+        End With
+        'Add to controls
+        Me.Controls.Add(lblP1Score)
+        Me.Controls.Add(lblP2Score)
+
+        'Create the lable that tells the players who's turn it is
+        With lblTurn
+            .Text = "Turn : Player 1"
+            .Location = New System.Drawing.Point(70, 105)
+            .Size = New System.Drawing.Size(140, 25)
+            .Font = New System.Drawing.Font("standard", 12, FontStyle.Regular)
+        End With
+        'Add to controls
+        Me.Controls.Add(lblTurn)
+
+        'Create the heading lables
+        With lblP1Heading
+            .Text = p1name
+            .Size = New System.Drawing.Size(250, 50)
+            .Location = New System.Drawing.Point(570, 35)
+            .Font = New System.Drawing.Font("standard", 20, FontStyle.Underline)
+        End With
+        With lblP2heading
+            .Text = p2name
+            .Size = New System.Drawing.Size(250, 50)
+            .Location = New System.Drawing.Point(570, 885)
+            .Font = New System.Drawing.Font("standard", 20, FontStyle.Underline)
+        End With
+        'Add lables to controls
+        Me.Controls.Add(lblP1Heading)
+        Me.Controls.Add(lblP2heading)
+
+        'Create the title of the scores listbox
+        With lblScoresHeading
+            .Location = New System.Drawing.Point(1075, 75)
+            .Size = New System.Drawing.Size(170, 30)
+            .Font = New System.Drawing.Font("standard", 16, FontStyle.Underline)
+            .Text = "High Scores"
+        End With
+        Me.Controls.Add(lblScoresHeading) 'add lables to controls
+    End Sub
+
+    Private Sub create_listboxes()
+        'creates the list boxes that will be used in the program
+        'Create the listbox that displays the scores
+        With lstScores
+            .Size = New System.Drawing.Size(170, 500)
+            .Location = New System.Drawing.Point(1070, 110)
+        End With
+        'Add to controls
+        Me.Controls.Add(lstScores) 'add listbox to controls
+
+        'Create the listboxes that display the grave of each player
+        With lstP1Grave
+            .Size = New System.Drawing.Size(160, 200)
+            .Location = New System.Drawing.Point(60, 180)
+            .Font = New System.Drawing.Font("standard", 10, FontStyle.Regular)
+        End With
+        With lstP2Grave
+            .Size = New System.Drawing.Size(160, 200)
+            .Location = New System.Drawing.Point(60, 430)
+            .Font = New System.Drawing.Font("standard", 10, FontStyle.Regular)
+        End With
+        'Add to controls
+        Me.Controls.Add(lstP1Grave)
+        Me.Controls.Add(lstP2Grave)
+    End Sub
+
+    Private Sub fill_control_arrays()
+        'fills the picbox_array with the required pictureboxes
+        picbox_array(1, 1) = picbox1
+        picbox_array(2, 1) = picbox2
+        picbox_array(3, 1) = picbox3
+        picbox_array(4, 1) = picbox4
+        picbox_array(5, 1) = picbox5
+        picbox_array(6, 1) = picbox6
+        picbox_array(7, 1) = picbox7
+        picbox_array(8, 1) = picbox8
+        picbox_array(1, 2) = picbox9
+        picbox_array(2, 2) = picbox10
+        picbox_array(3, 2) = picbox11
+        picbox_array(4, 2) = picbox12
+        picbox_array(5, 2) = picbox13
+        picbox_array(6, 2) = picbox14
+        picbox_array(7, 2) = picbox15
+        picbox_array(8, 2) = picbox16
+        picbox_array(1, 3) = picbox17
+        picbox_array(2, 3) = picbox18
+        picbox_array(3, 3) = picbox19
+        picbox_array(4, 3) = picbox20
+        picbox_array(5, 3) = picbox21
+        picbox_array(6, 3) = picbox22
+        picbox_array(7, 3) = picbox23
+        picbox_array(8, 3) = picbox24
+        picbox_array(1, 4) = picbox25
+        picbox_array(2, 4) = picbox26
+        picbox_array(3, 4) = picbox27
+        picbox_array(4, 4) = picbox28
+        picbox_array(5, 4) = picbox29
+        picbox_array(6, 4) = picbox30
+        picbox_array(7, 4) = picbox31
+        picbox_array(8, 4) = picbox32
+        picbox_array(1, 5) = picbox33
+        picbox_array(2, 5) = picbox34
+        picbox_array(3, 5) = picbox35
+        picbox_array(4, 5) = picbox36
+        picbox_array(5, 5) = picbox37
+        picbox_array(6, 5) = picbox38
+        picbox_array(7, 5) = picbox39
+        picbox_array(8, 5) = picbox40
+        picbox_array(1, 6) = picbox41
+        picbox_array(2, 6) = picbox42
+        picbox_array(3, 6) = picbox43
+        picbox_array(4, 6) = picbox44
+        picbox_array(5, 6) = picbox45
+        picbox_array(6, 6) = picbox46
+        picbox_array(7, 6) = picbox47
+        picbox_array(8, 6) = picbox48
+        picbox_array(1, 7) = picbox49
+        picbox_array(2, 7) = picbox50
+        picbox_array(3, 7) = picbox51
+        picbox_array(4, 7) = picbox52
+        picbox_array(5, 7) = picbox53
+        picbox_array(6, 7) = picbox54
+        picbox_array(7, 7) = picbox55
+        picbox_array(8, 7) = picbox56
+        picbox_array(1, 8) = picbox57
+        picbox_array(2, 8) = picbox58
+        picbox_array(3, 8) = picbox59
+        picbox_array(4, 8) = picbox60
+        picbox_array(5, 8) = picbox61
+        picbox_array(6, 8) = picbox62
+        picbox_array(7, 8) = picbox63
+        picbox_array(8, 8) = picbox64
+        'Fill lable array
+        'lbl(n, 1) is the numbered lables, lbl(n, 2) is the lettered ones
+        lable_array(1, 1) = lbl1
+        lable_array(2, 1) = lbl2
+        lable_array(3, 1) = lbl3
+        lable_array(4, 1) = lbl4
+        lable_array(5, 1) = lbl5
+        lable_array(6, 1) = lbl6
+        lable_array(7, 1) = lbl7
+        lable_array(8, 1) = lbl8
+        lable_array(1, 2) = lblA
+        lable_array(2, 2) = lblB
+        lable_array(3, 2) = lblC
+        lable_array(4, 2) = lblD
+        lable_array(5, 2) = lblE
+        lable_array(6, 2) = lblF
+        lable_array(7, 2) = lblG
+        lable_array(8, 2) = lblH
+    End Sub
+
+    Private Sub fill_board()
+        'Fills the board array in it's starting position
+        'Follows the rules of chess in it's layout
+        'places the pawns in their positions
+        For x = 1 To 8
+            board(x, 2) = "wp"
+            board(x, 7) = "bp"
+        Next
+        'Place the other pieces in their correct positions
+        board(1, 1) = "wr"
+        board(2, 1) = "wh"
+        board(3, 1) = "wb"
+        board(4, 1) = "wq"
+        board(5, 1) = "wk"
+        board(6, 1) = "wb"
+        board(7, 1) = "wh"
+        board(8, 1) = "wr"
+        board(1, 8) = "br"
+        board(2, 8) = "bh"
+        board(3, 8) = "bb"
+        board(4, 8) = "bq"
+        board(5, 8) = "bk"
+        board(6, 8) = "bb"
+        board(7, 8) = "bh"
+        board(8, 8) = "br"
+        'this fills the rest of the array with "" values
+        'this is instead of Nothing values
+        For x = 1 To 8
+            For y = 3 To 6
+                board(x, y) = ""
+            Next y
+        Next x
+    End Sub
+
+    Private Sub display_board()
+        'This sub takes the board array and outputs it onto the screen
+        Dim pic As String = ""          'stores the acronym for the picture
+        For x = 1 To 8
+            For y = 1 To 8
+                'These If statments display the checked background that is 
+                If x Mod 2 = 0 And y Mod 2 = 0 Then
+                    picbox_array(x, y).BackColor = Color.White
+                End If
+                If x Mod 2 <> 0 And y Mod 2 = 0 Then
+                    picbox_array(x, y).BackColor = Color.DarkGray
+                End If
+                If x Mod 2 = 0 And y Mod 2 <> 0 Then
+                    picbox_array(x, y).BackColor = Color.DarkGray
+                End If
+                If x Mod 2 <> 0 And y Mod 2 <> 0 Then
+                    picbox_array(x, y).BackColor = Color.White
+                End If
+                'display the pictures of the pieces on the board
+                pic = board(x, y)
+
+                If pic = "" Then        'if pic = "", then an error will occur because no picture found
+                    picbox_array(x, y).Image = Nothing
+                Else
+                    picbox_array(x, y).Image = Image.FromFile(Application.StartupPath & "\chess pieces\" & pic & ".png")
+                End If
+            Next y
+        Next x
+    End Sub
+
+    Private Sub restart_game()
+        'This sub deals with restarting the game and resetting the board
+        fill_board()            're fills the board array to the opening format
+        display_board()         'outputs the re filled board onto the screen in it's starting layout
+        lblP1Heading.Text = p1name
+        lblP2heading.Text = p2name
+        lstP1Grave.Items.Clear()
+        lstP2Grave.Items.Clear()
+        game_ended = False      'begins the new game
+        click_counter = 0
+        turn = "p1"
+        lblTurn.Text = "Turn : Player 1"
+        p1score = 0
+        p2score = 0
+        lblP1Score.Text = p1name & " : " & p1score
+        lblP2Score.Text = p2name & " : " & p2score
+    End Sub
+
+    Private Sub make_move()
+        'This sub deals with the player making a move.
+        'It controls the flow of logic
+        Dim move(2, 2) As Integer                                           'A 2D array storing [[origin x, orogin y], [destination x, destination y]]
+        Dim attacking, piece As String                                      'Attacking stores the acronym of the piece (if any) that is bieng taken
+        Dim valid As Boolean = False                                        'This is used to validate moves
+        get_move(move, piece)                                               'This sub gets the raw data (origin, destination) and fills the move array
+        check_move(piece, move, valid)                                      'This sub checks the move using global variables (board) as well as the move array
+        attacking = board(move(2, 1), move(2, 2))                           'This gets the piece that the player is taking
+        picbox_array(move(1, 1), move(1, 2)).BorderStyle = BorderStyle.None 'This resets the boardstyle of both the origin and destination pic boxes
+        picbox_array(move(2, 1), move(2, 2)).BorderStyle = BorderStyle.None
+        If Not valid Then                                                   'This accounts for invalid moves
+            click_counter = 0                                               'Reset click_counter
+            swap(turn)                                                      'Swapping the turn here means that when it is swapped later, it is back to it's original value
+        Else
+            execute(move, piece, attacking)                                 'If the move is valid, execute it on the board
+        End If
+    End Sub
+
+    Private Sub save_game(game_title)
+        'This sub must save games to a given file that is defined by the games title
+        'It works by resetting the file to have nothing in it
+        'And then re writing all the data into it in a specific order so that it can be read by the computer later
+        Dim path As String = Application.StartupPath & "\saved games\" & game_title & ".txt"    'Path is set here to avoid long, unweidly scentences
+        System.IO.File.Open(path, System.IO.FileMode.Truncate).Close()                          'This code resets the contents of the file
+        FileSystem.FileOpen(1, path, OpenMode.Append)                                           'Open the file in append mode
+        FileSystem.WriteLine(1, p1name)                                                         'append P1name to file
+        FileSystem.WriteLine(1, p1score)                                                        'append P1score to file
+        FileSystem.WriteLine(1, p2name)                                                         'append P2name to file
+        FileSystem.WriteLine(1, p2score)                                                        'append p2score to file
+        FileSystem.WriteLine(1, turn)                                                           'append turn to file
+        For y = 1 To 8
+            For x = 1 To 8
+                FileSystem.WriteLine(1, board(x, y))                                            'append the board array to the file in a specific order (across then down)
+            Next
+        Next
+        FileSystem.FileClose(1)                                                                 'close the file
+    End Sub
+
+    Private Sub get_move(ByRef move, ByRef piece)
+        'uses board, origin and destination as it's global input
+        'This sub must determine the players move given the tiles that were clicked
+        'as well as the piece on that tile
+        Dim length, temp As Integer
+        length = origin.Length
+        temp = Int(Mid(origin, 8))    'This is the number of the picbox clicked
+        'e.g. if origin = picTile34, temp = 34
+        'This gets the x, y co-ordinates of the origin tile
+        move(1, 1) = ((temp - 1) Mod 8) + 1 'x co-ordinate origin
+        move(1, 2) = Int((temp - 1) / 8) + 1 'y co-ordinate origin
+
+        'this gets the destination co-ordinates
+        length = destination.Length
+        temp = Int(Mid(destination, 8))
+        move(2, 1) = ((temp - 1) Mod 8) + 1
+        move(2, 2) = Int((temp - 1) / 8) + 1
+        piece = board(move(1, 1), move(1, 2))   'this is the piece bieng moved
+        'move now contains the two co-ordinates of the move
+        'e.g. if move contains [(3, 4), (4, 5)] it would represent a move origin point (3, 4) to point (4, 5). 
+        'piece now contains the acronym of the piece moving
+    End Sub
+
+    Private Sub check_move(ByVal piece, ByVal move, ByRef valid)
+        'This sub takes the piece and move array and assigns functions to check the move. It then sets valid to an appropriate boolean value
+        'This does not do any of the calculations it's self, it mearly assigns functions to do that
+        valid = True                                                'Assume move is true
+        If (turn = "p1" And Mid(piece, 1, 1) <> "w") Or (turn = "p2" And Mid(piece, 1, 1) <> "b") Then
+            valid = False                                           'checks that the player is moving the correct piece
+        End If
+        If move(1, 1) = move(2, 1) And move(1, 2) = move(2, 2) Then
+            valid = False                                           'This is the case where the player hasn't moved
+        End If
+        If valid = True Then                                        'This assigns an appropriate function
+            Select Case Mid(piece, 2, 1)                            'This gets the right character of the piece string (the piece bieng moved)
+                Case "p" : valid = check_pawn(piece, move)          'Case pawn is moved
+                Case "r" : valid = check_rook(piece, move)          'Case rook is moved
+                Case "h" : valid = check_horse(piece, move)         'Case knight is moved (h is used for horse to avoid conflict with the king which also uses k)
+                Case "b" : valid = check_bishop(piece, move)        'Case bishop is moved
+                Case "q" : valid = check_queen(piece, move)         'Case queen is moved
+                Case "k" : valid = check_king(piece, move)          'Case king is moved
+                Case Else : error_occurance()                       'Throws an error in any other case
+            End Select
+        End If
+    End Sub
+
+    Private Sub execute(move, piece, attacking)
+        'This sub must check for a winner, update the score and update the board
+        If attacking <> "" Then             'This will be "" if not attacking
+            update_score(attacking)         'If activated, the score will be updated according to the rules of chess
+            update_grave(attacking)
+        End If
+        If Mid(attacking, 2, 1) = "k" Then  'This checks if the king piece has been taken
+            game_ended = True               'if the king has been taken, the game is over
+            If Mid(piece, 1, 1) = "w" Then  'this determines the winner of the game
+                winner = "p2"
+            Else
+                winner = "p1"
+            End If
+            scoring()                       'This deals the the scoring when the winner is determined
+            restart_game()                  'This resets the board and deals with restarts
+        Else
+            update_board(move, piece)       'This updates the board
+        End If
+    End Sub
+
+    Private Sub update_score(attacking)
+        'This sub must take the attacking variable and update the appropriate score with appropriate vlaues
+        Const p = 1                             'the scores of taking each piece
+        Const r = 5
+        Const h = 3
+        Const b = 3
+        Const q = 9
+        Const k = 0
+        If turn = "p1" Then                     'will increment p1's score
+            Select Case Mid(attacking, 2, 1)
+                Case "p" : p1score = p1score + p
+                Case "r" : p1score = p1score + r
+                Case "h" : p1score = p1score + h
+                Case "b" : p1score = p1score + b
+                Case "q" : p1score = p1score + q
+                Case "k" : p1score = p1score + k
+            End Select
+        Else
+            Select Case Mid(attacking, 2, 1)    'update p2's score
+                Case "p" : p2score = p2score + p
+                Case "r" : p2score = p2score + r
+                Case "h" : p2score = p2score + h
+                Case "b" : p2score = p2score + b
+                Case "q" : p2score = p2score + q
+                Case "k" : p2score = p2score + k
+            End Select
+        End If
+        lblP1Score.Text = "Player 1 : " & p1score 'update the lables that display the scores
+        lblP2Score.Text = "Player 2 : " & p2score
+    End Sub
+
+    Private Sub update_grave(attacking)
+        'This sub updates the grave list that lists all hte pieces that each player has lost and their value
+        Const p = 1                             'the scores of taking each piece
+        Const r = 5
+        Const h = 3
+        Const b = 3
+        Const q = 9
+        Const k = 0
+        Select Case attacking                   'This checks the piece that is bieng taken and uses its colour to place it in the correct list
+            Case "wp" : lstP1Grave.Items.Add("White Pawn " & p & "pt")
+            Case "wr" : lstP1Grave.Items.Add("White Rook " & r & "pts")
+            Case "wh" : lstP1Grave.Items.Add("White Horse " & h & "pts")
+            Case "wb" : lstP1Grave.Items.Add("White Bishop " & b & "pts")
+            Case "wq" : lstP1Grave.Items.Add("White Queen " & q & "pts")
+            Case "wk" : lstP1Grave.Items.Add("White King " & k & "pts")
+            Case "bp" : lstP2Grave.Items.Add("Black Pawn " & p & "pt")
+            Case "br" : lstP2Grave.Items.Add("Black Rook " & r & "pts")
+            Case "bh" : lstP2Grave.Items.Add("Black Horse " & h & "pts")
+            Case "bb" : lstP2Grave.Items.Add("Black Bishop " & b & "pts")
+            Case "bq" : lstP2Grave.Items.Add("Black Queen " & q & "pts")
+            Case "bk" : lstP2Grave.Items.Add("Black King " & k & "pts")
+        End Select
+    End Sub
+
+    Private Sub update_board(move, piece)
+        'This sub will change the board_array and the board
+        picbox_array(move(1, 1), move(1, 2)).Image = Nothing    'Update the board pictures
+        picbox_array(move(2, 1), move(2, 2)).Image = Image.FromFile(Application.StartupPath & "\chess pieces\" & piece & ".png")
+        board(move(1, 1), move(1, 2)) = ""                      'Update the board array
+        board(move(2, 1), move(2, 2)) = piece
+        If Mid(lblTurn.Text, 15, 1) = "1" Then                  'toggle turn lable
+            lblTurn.Text = "Turn : Player 2"
+        Else
+            lblTurn.Text = "Turn : Player 1"
+        End If
+    End Sub
+
+    Private Sub scoring()
+        'This sub Handles the score submission process and outputs the scores onto the board
+        Dim scores(1) As Integer 'holds the previous scores
+        Dim names(1) As String 'holds the previous names
+        Dim temp As Array 'is set to the output of the sort function
+        write_file(p1score, p1name)         'write the two score, name sets to the scores.txt file
+        write_file(p2score, p2name)
+        get_high_scores(scores, names)      'read the whole file into two arrays (names and scores)
+        temp = sort_scores(scores, names)   'temp is the an array of arrays that gets the output from sort_scores
+        scores = temp(1)                    'The first element in temp is the scores array
+        names = temp(2)                     'The second is the names array
+        disp_high_scores(scores, names)     'output the decending name, score pairs into the listbox
+    End Sub
+
+    Private Sub get_high_scores(ByRef scores() As Integer, ByRef names() As String)
+        'This sub reads the scores sequential file and places the values into two arrays storing the names and corresponding scores
+        Dim score_counter, name_counter As Integer                          'Counts the length of the score and name arrays
+        Dim temp_name, temp_score As String                                 'The temporary values that are then validated before bieng placed in their arrays
+        score_counter = 1
+        name_counter = 1
+        FileOpen(1, Application.StartupPath & "\scores.txt", OpenMode.Input) 'Open the file
+        While Not EOF(1)                                                    'Check for the end of file before attempting to read from it
+            FileSystem.Input(1, temp_name)                                  'read the name value into temp_name (the file is constructed in {name : score} pairs
+            FileSystem.Input(1, temp_score)                                 'read the score value into temp_score
+            If validate_integer(temp_score) Then                            'This validates the integer for good measure
+                scores(score_counter) = CInt(temp_score)                    'this converts the now validated integer and puts it into the array
+                score_counter = score_counter + 1
+            End If
+            names(name_counter) = temp_name
+            name_counter = name_counter + 1
+            ReDim Preserve names(name_counter)                              'increase the length of the arrays by one
+            ReDim Preserve scores(score_counter)
+        End While
+        FileSystem.FileClose(1)
+        ReDim Preserve names(name_counter - 1)                              'decrease the length of the arrays because the last elemnt is always empty
+        ReDim Preserve scores(score_counter - 1)
+    End Sub
+
+    Private Sub disp_high_scores(scores() As Integer, names() As String)
+        'This sub displays the ordered {name : score} pairs into the listbox
+        For i = 1 To scores.Length - 1   'Cycle through the parallel scores & names array and output the pairs
+            lstScores.Items.Add(names(i))
+            lstScores.Items.Add(scores(i))
+        Next
+    End Sub
+
+    Private Sub write_file(score, name)
+        'This sub appends the name and score to the file
+        FileSystem.FileOpen(1, Application.StartupPath & "\scores.txt", OpenMode.Append)
+        FileSystem.WriteLine(1, name)
+        FileSystem.WriteLine(1, score)
+        FileSystem.FileClose(1)
+    End Sub
+
+    Private Function validate_integer(number As String) As Boolean
+        'This Takes a candidate and returns wether each character in the candidate is an integer
+        If number = "" Then                     'this checks for null string values
+            Return False
+        End If
+        If IsNothing(number) Then               'this checks for nothing values
+            Return False
+        End If
+        For Each i In number                    'This increments through each character in the string
+            If Asc(i) < 48 Or Asc(i) > 57 Then  'These are the ascii characters that represent the digits
+                Return False
+            End If
+        Next
+        Return True                             'return true in all other cases
+    End Function
+
+    Private Function check_pawn(piece As String, move(,) As Integer) As Boolean
+        'This sub checks a pawn move given the move array
+        Dim taken_piece As String
+        Dim change_x, change_y As Integer
+        Dim attacking, starting As Boolean
+        Dim a, b, c, d As Boolean
+        taken_piece = board(move(2, 1), move(2, 2))
+        'will check that the piece to be taken is not bieng taken by the same colour (e.g. wq cannot take another wp) 
+        If Mid(piece, 1, 1) = Mid(taken_piece, 1, 1) Then
+            Return False
+        End If
+        change_x = System.Math.Abs(move(1, 1) - move(2, 1))     'the change in the x component of the move
+        'abs used because direction is irrelivent
+        change_y = move(2, 2) - move(1, 2)                      'a move down the screen is positive, a move up is negative
+        attacking = False
+        starting = False
+        If board(move(2, 1), move(2, 2)) <> "" Then             'checks it the piece is attacking (if so, special rules apply)
+            attacking = True
+        End If
+        'checks if the piece is in the starting position
+        If (move(1, 2) = 2 And Mid(piece, 1, 1) = "w") Or (move(1, 2) = 7 And Mid(piece, 1, 1) = "b") Then
+            starting = True
+        End If
+        'case where pawn is attacking
+        a = attacking And Not starting And ((change_y = 1 And Mid(piece, 1, 1) = "w") Or (change_y = -1 And Mid(piece, 1, 1) = "b")) And change_x = 1
+        'case where the pawn is moving 1 or 2 spaces foward from starting position, not attacking
+        b = Not attacking And starting And change_x = 0 And (((change_y = 1 Or change_y = 2) And Mid(piece, 1, 1) = "w") Or ((change_y = -1 Or change_y = -2) And Mid(piece, 1, 1) = "b"))
+        'case where the pawn is moving 1 space foward, not attacking, not starting
+        c = Not attacking And Not starting And change_x = 0 And ((change_y = 1 And Mid(piece, 1, 1) = "w") Or (change_y = -1 And Mid(piece, 1, 1) = "b"))
+        'case where the pawn is attacking on the first move
+        d = attacking And starting And change_x = 1 And ((change_y = 1 And Mid(piece, 1, 1) = "w") Or (change_y = -1 And Mid(piece, 1, 1) = "b"))
+        If a Or b Or c Or d Then
+            Return True
+        End If
+        Return False
+    End Function
+
+    Private Function check_rook(piece As String, move(,) As Integer) As Boolean
+        'This sub checks a rooks move
+        Dim taken_piece As String
+        Dim change_x, change_y As Integer
+        Dim x, y As Integer
+        'rooks can move vertically and horizontally for any distance
+        taken_piece = board(move(2, 1), move(2, 2))
+        If Mid(piece, 1, 1) = Mid(taken_piece, 1, 1) Then   'will check that the piece that is to be taken by the rook is not of the same colour as it
+            Return False
+        End If
+        change_x = move(2, 1) - move(1, 1)                  'a negative value indicates moving Left
+        change_y = move(2, 2) - move(1, 2)                  'a negative value indicates moving backwards
+        If change_x <> 0 And change_y <> 0 Then             'checks that the move is not diagonal
+            Return False
+        End If
+        'checks movement in the x co-ordinate
+        If change_x > 0 Then                                'checks wether there are any pieces in between the rook and it's destination
+            x = move(1, 1) + 1                              'the +1 is so that the FOR...NEXT loop does not check the tile its self
+            For i = x To x + change_x - 2                   'this will cycle throught the board until it reaches the specIFied end point
+                If board(i, move(1, 2)) <> "" Then
+                    Return False
+                End If
+            Next i
+        End If
+        If change_x < 0 Then                                'case: moving backwards
+            x = move(1, 1) - 1                              'the -1 is so that the FOR...NEXT loop does not check the tile its self
+            For i = x To x + change_x + 2 Step -1           'cycles from Right to Left throught the board
+                If board(i, move(1, 2)) <> "" Then
+                    Return False
+                End If
+            Next i
+        End If
+        'checks movement in the y co-ordinate
+        If change_y > 0 Then
+            y = move(1, 2) + 1
+            For i = y To y + change_y - 2
+                If board(move(1, 1), i) <> "" Then
+                    Return False
+                End If
+            Next i
+        End If
+        If change_y < 0 Then                                'if the piece is moving down the board
+            y = move(1, 2) - 1
+            For i = y To y + change_y + 2 Step -1
+                If board(move(1, 1), i) <> "" Then
+                    Return False
+                End If
+            Next i
+        End If
+        Return True                                         'returns true in all other cases
+    End Function
+
+    Private Function check_horse(piece As String, move(,) As Integer) As Boolean
+        'This sub checks a horses move
+        'for horses move see documentation
+        Dim taken_piece As String
+        Dim change_x, change_y As Integer
+        Dim a, b As Boolean
+        taken_piece = board(move(2, 1), move(2, 2))
+        If Mid(piece, 1, 1) = Mid(taken_piece, 1, 1) Then   'will check that the piece that is to be taken by the rook is not of the same colour as it
+            Return False
+        End If
+        change_x = System.Math.Abs(move(2, 1) - move(1, 1)) 'abs because +/- x becomes x
+        change_y = System.Math.Abs(move(2, 2) - move(1, 2))
+        a = change_x = 1 And change_y = 2                   'the horse has two different abs(x), abs(y) combinations that are acceptable
+        b = change_x = 2 And change_y = 1
+        If a Or b Then
+            Return True
+        Else
+            Return False
+        End If
+    End Function
+
+    Private Function check_bishop(piece As String, move(,) As Integer) As Boolean
+        'bishops can move diagonally for any distance
+        'for horses move see documentation
+        Dim taken_piece As String
+        Dim change_x, change_y As Integer
+        Dim temp As String
+        Dim x, y As Integer
+        taken_piece = board(move(2, 1), move(2, 2))
+        If Mid(piece, 1, 1) = Mid(taken_piece, 1, 1) Then               'will check that the piece that is to be taken by the rook is not of the same colour as it
+            Return False
+        End If
+        change_x = move(2, 1) - move(1, 1)                              'the direction of the movment in the x and y axis is important so no abs is used
+        change_y = move(2, 2) - move(1, 2)
+        If System.Math.Abs(change_x) <> System.Math.Abs(change_y) Then  'this checks that the move is diagonal
+            Return False
+        End If
+        temp = get_increment(change_x, change_y)                        'used to indicate which direction to increment the x and y values
+        x = move(1, 1)
+        y = move(1, 2)
+        'will cycle through the tiles inbetween the piece and its destination
+        While x < move(2, 1) - 1 Or x > move(2, 1) + 1                  'uses the fact that abs(x) = abs(y)
+            If Mid(temp, 1, 1) = "+" Then
+                x = x + 1
+            Else
+                x = x - 1
+            End If
+            If Mid(temp, 2, 1) = "+" Then
+                y = y + 1
+            Else
+                y = y - 1
+            End If
+            If board(x, y) <> "" Then                                   'checks that the piece is not "jumping" any other pieces
+                Return False
+            End If
+        End While
+        Return True
+    End Function
+
+    Private Function get_increment(change_x As Integer, change_y As Integer) As String
+        'used with the check_bishop function
+        'this checks wether to increment or decrement x and y and Returns a string
+        If change_x > 0 Then                    'if change_x > 0, then the piece is moving diagonally to the Right
+            If change_y > 0 Then                'if change_y > 0 then the piece is moving diagonally foward
+                Return "++"
+            Else
+                Return "+-"
+            End If
+        Else
+            If change_y > 0 Then
+                Return "-+"
+            Else
+                Return "--"
+            End If
+        End If
+    End Function
+
+    Private Function check_queen(piece As String, move(,) As Integer) As Boolean
+        'queen can move vertically, horizontally or diagonally for any distance
+        'since the queen move is made up of rook and bishop moves, this uses the other funcitons
+        Dim taken_piece As String
+        Dim change_x, change_y As Integer
+        taken_piece = board(move(2, 1), move(2, 2))
+        If Mid(piece, 1, 1) = Mid(taken_piece, 1, 1) Then                       'will check that the piece that is to be taken by the rook is not of the same colour as it
+            Return False
+        End If
+        change_x = move(2, 1) - move(1, 1)
+        change_y = move(2, 2) - move(1, 2)
+        If System.Math.Abs(change_x) = System.Math.Abs(change_y) Then           'checks a diagonal move
+            Return check_bishop(piece, move)
+        End If
+        If (change_x = 0 And change_y <> 0) Or (change_x <> 0 And change_y = 0) Then
+            Return check_rook(piece, move)
+        End If
+        Return False
+    End Function
+
+    Private Function check_king(piece As String, move(,) As Integer) As Boolean
+        'king can move vertically, horizontally or diagonally 1 space
+        'similarly to a queen, a king move is made up of rook and bishop moves
+        Dim taken_piece As String
+        Dim change_x, change_y As Integer
+        taken_piece = board(move(2, 1), move(2, 2))
+        If Mid(piece, 1, 1) = Mid(taken_piece, 1, 1) Then 'will check that the piece that is to be taken by the rook is not of the same colour as it
+            Return False
+        End If
+        change_x = move(2, 1) - move(1, 1)
+        change_y = move(2, 2) - move(1, 2)
+        If (change_x >= -1 And change_x <= 1) And (change_y >= -1 And change_y <= 1) Then 'This checks that the move is only one square
+            Return True
+        End If
+        Return False
+    End Function
+
+    Private Function sort_scores(scores() As Integer, names() As String) As Array
+        'Sorts in decending order using a selection sort
+        'much faster than bubble sort for large data sets
+        'This takes two parallel arrays (scores and names) and returns an array of length two that contains the sorted array "scores" and the 
+        'array "names" with the values in the same position as scores
+        'e.g scores = [3,6,2,4], names = [AMH, TIS, FED, IDH], sort_scores(scores, names) returns an array containing [[6,4,2,3] , [TIS,IDH,AMH,FED]]
+        Dim end_unsorted, temp_int, min, i, posmax As Integer 'temp_int and temp_str are used to store temporary values of different data types
+        Dim temp_str As String
+        Dim output(2) As Array              'This is the array used to output the two arrays (scores and names)
+        end_unsorted = scores.Length - 1    'The last element in the array scores
+        temp_int = 0
+        While end_unsorted > 1
+            i = 1
+            min = scores(i)                 'set the min to the first array element
+            posmax = 1                      'set the index (posmax) to 1
+            While i < end_unsorted
+                i = i + 1
+                If scores(i) < min Then     'compare the ith element of scores with the current min value
+                    min = scores(i)         'if the ith element is less, set min to the ith element
+                    posmax = i
+                End If
+            End While
+            'swap scores(posmax) with scores(end_unsorted)
+            temp_int = scores(posmax)
+            scores(posmax) = scores(end_unsorted)
+            scores(end_unsorted) = temp_int
+            'swap names(posmax) with names(end_unsorted) to keep arrays parallel
+            temp_str = names(posmax)
+            names(posmax) = names(end_unsorted)
+            names(end_unsorted) = temp_str
+            end_unsorted = end_unsorted - 1
+        End While
+        output(1) = scores                  'input the two arrays into an "Array of arrays" which is subtly different from a 2d array because it can hold different data types
+        output(2) = names
+        Return output
+    End Function
+
+    Private Sub error_occurance()
+        'deals with unforseen in-game errors and may save me a mark if something goes wrong so the game doesn't crash
+        MsgBox("An error has occured in game." & vbNewLine & _
+        "To attempt to fix this error, restart the game" & vbNewLine & _
+        "If the error continues, please contact the developer")
+    End Sub
+
+End Class
+
+
+
+==========================================================================================
+
+
+Public Class frmMain
+    Public p1grave(0), p2grave(0) As String
+    Public game_loaded As Boolean = False
+    Dim btnNewGame, btnLoadGame, btnQuit, btnHelp, btnRules, btnDelGame As New Button
+    Dim btn_array(6) As Button
+    Private Sub frmMain_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        'this creates the form when the form starts to load
+        fill_btn_array()    'Fills the button array
+        create_board()      'Dynamically creates the board
+    End Sub
+
+    Private Sub Load_Click(ByVal sender As Object, ByVal e As EventArgs)
+        'This sub is activated when the load game button is clicked
+        Do
+            frmNewGame.game_title = InputBox("What is the name of the game what you would like to load?", "Select Game")
+        Loop Until My.Computer.FileSystem.FileExists(Application.StartupPath & "\saved games\" & frmNewGame.game_title & ".txt") Or frmNewGame.game_title = ""
+        If frmNewGame.game_title <> "" Then
+            game_loaded = True          'Boolean indicating that the game has been loaded instead of a new game
+            get_saved_game(frmNewGame.game_title)            'Gets the data from the sequential file
+            get_grave()                 'Searches the board array and finds any missing pieces and places them in the grave
+            frmGame.Show()
+            Me.Hide()
+        End If
+    End Sub
+
+    Private Sub New_Click(ByVal sender As Object, ByVal e As EventArgs)
+        'This sub is activated when the new game button is clicked
+        Me.Hide()               'This hides the main window
+        frmNewGame.Show()       'This moves to the new game window for the player to enter their details
+    End Sub
+
+    Private Sub Delete_Click(ByVal sender As Object, ByVal e As EventArgs)
+        Me.Hide()
+        frmDeleteGame.Show()
+    End Sub
+
+    Private Sub Help_Click(ByVal sender As Object, ByVal e As EventArgs)
+
+    End Sub
+
+    Private Sub Rules_Click(ByVal sender As Object, ByVal e As EventArgs)
+
+    End Sub
+
+    Private Sub Quit_Click(ByVal sender As Object, ByVal e As EventArgs)
+        'End the game
+        End
+    End Sub
+
+    Private Sub create_board()
+        'This creates the five buttons that are used to access certain functionality of the game
+        Dim y_coordinate As Integer
+        Me.Size = New System.Drawing.Size(310, 470)
+        Me.Text = "Chess Game"
+        Const x_coordinate = 70                                                     'This stays the same throughout the game
+        y_coordinate = 40                                                           'This varies the height of the certain boxes
+        For i = 1 To 6                                                              'This cycles through the button array
+            With btn_array(i)
+                .Size = New System.Drawing.Size(150, 45)                            'The size is the same for all the buttons
+                .Location = New System.Drawing.Point(x_coordinate, y_coordinate)    'The location stays the same in the x co-ordinate and changes in the y co-ordinate
+                .Font = New System.Drawing.Font("standard", 13, FontStyle.Regular)  'The font is the same
+                Select Case i                                                       'This selects what text to display on each button as well as which click event to assign
+                    Case 1
+                        .Text = "New Game"
+                        AddHandler btn_array(i).Click, AddressOf New_Click
+                    Case 2
+                        .Text = "Load Game"
+                        AddHandler btn_array(i).Click, AddressOf Load_Click
+                    Case 3
+                        .Text = "Delete Game"
+                        AddHandler btn_array(i).Click, AddressOf Delete_Click
+                    Case 4
+                        .Text = "Rules"
+                        AddHandler btn_array(i).Click, AddressOf Rules_Click
+                    Case 5
+                        .Text = "Help"
+                        AddHandler btn_array(i).Click, AddressOf Help_Click
+                    Case 6
+                        .Text = "Quit"
+                        AddHandler btn_array(i).Click, AddressOf Quit_Click
+                End Select
+            End With
+            y_coordinate = y_coordinate + 60                                        'The y co-ordinate increments by 60 to allow for a 15 pixle gap between buttons
+            Me.Controls.Add(btn_array(i))                                           'Add to controls
+        Next i
+    End Sub
+
+    Private Sub fill_btn_array()
+        'This places all the buttons into an array for easy managment
+        btn_array(1) = btnNewGame
+        btn_array(2) = btnLoadGame
+        btn_array(3) = btnDelGame
+        btn_array(4) = btnRules
+        btn_array(5) = btnHelp
+        btn_array(6) = btnQuit
+    End Sub
+
+    Private Sub get_saved_game(file)
+        'This sub reads a sequential file and puts the information into variouse variables and arrays
+        'The files are all written in a cetrain way to allow for this to happen
+        'p1name, p1score, p2name, p2score, turn, each element in the board from left to right and top to bottom
+        FileSystem.FileOpen(1, Application.StartupPath & "\saved games\" & file & ".txt", OpenMode.Input)
+        FileSystem.Input(1, frmGame.p1name)         'read p1name
+        FileSystem.Input(1, frmGame.p1score)        'read p1score
+        FileSystem.Input(1, frmGame.p2name)         'read p2name
+        FileSystem.Input(1, frmGame.p2score)        'read p2score
+        FileSystem.Input(1, frmGame.turn)           'read turn
+        For y = 1 To 8                              'is written left to righ and top to bottom so y is on the outside
+            For x = 1 To 8
+                FileSystem.Input(1, frmGame.board(x, y)) 'fill the board array according to the file
+            Next x
+        Next y
+        FileSystem.FileClose(1)                     'close the file
+    End Sub
+
+    Private Sub get_grave()
+        'This sub must search the board array and find any missing pieces, these pieces will represent pieces which have been taken by the other players
+        'This requires a counting algorithm which counts the number of objects in an array
+        Dim p1counter, p2counter As Integer
+        Dim counter As Integer
+        Dim pieces(2) As String                                 'This array holds all the pieces which are in pairs (knights, rooks and bishops)
+        pieces(0) = "r"
+        pieces(1) = "h"
+        pieces(2) = "b"
+        p1counter = 0                                           'The p1grave() and p2grave() are both zero indexed
+        p2counter = 0
+        counter = count_objects(frmGame.board, "wp")            'count the number of white pawns on the board (there are supposed to be 8)
+        For i = 1 To 8 - counter                                'This runs if less than 8 pawns are found and it runs for the number of pawns less than 8 that are found
+            ReDim p1grave(p1counter)
+            p1grave(p1counter) = "wp"
+            p1counter = p1counter + 1
+        Next
+        counter = count_objects(frmGame.board, "bp")            'This does the same process for black pawns
+        For i = 1 To 8 - counter
+            ReDim p2grave(p2counter)
+            p2grave(p2counter) = "bp"
+            p2counter = p2counter + 1
+        Next
+        For Each i In pieces                                    'This takes care of the main pieces (knights, rooks and bishops)
+            counter = count_objects(frmGame.board, "w" & i)     'This counts the white pieces
+            For r = 1 To 2 - counter                            'appends piece to grave array if not found
+                ReDim p1grave(p1counter)
+                p1grave(p1counter) = "w" & i
+                p1counter = p1counter + 1
+            Next
+            counter = count_objects(frmGame.board, "b" & i)     'This counts the black pieces
+            For r = 1 To 2 - counter
+                ReDim p2grave(p2counter)
+                p2grave(p2counter) = "b" & i
+                p2counter = p2counter + 1
+            Next
+        Next
+        counter = count_objects(frmGame.board, "wq")            'This deals with the white queen (of which there is only one)
+        If counter <> 1 Then
+            ReDim Preserve p1grave(p1counter)
+            p1grave(p1counter) = "wq"
+        End If
+        counter = count_objects(frmGame.board, "bq")            'This deals with the black queen (of which there is only one)
+        If counter <> 1 Then
+            ReDim Preserve p2grave(p2counter)
+            p2grave(p2counter) = "bq"
+        End If
+        'The graves should now contain the disparity between the starting board and the saved board.
+        'this means that the score of all the pieces in p1grave should be equal to p2score and similarly for p2grave and p1score
+    End Sub
+
+    Private Function count_objects(list(,) As String, search_item As String) As Integer
+        'This sub takes a two dimensional array and a search_item and counts the number of occurences of that item in the array
+        'It returns an integer representing this number
+        'It uses a linear search mechanism to search through the 2d array
+        Dim counter As Integer                      'This is used to count the number of occurences
+        counter = 0
+        For x = 0 To list.GetUpperBound(0)          'This is the upper bound of the first dimension (vb is zero indexed)
+            For y = 0 To list.GetUpperBound(1)      'This is the upper bound of the second dimension
+                If list(x, y) = search_item Then    'compare the element with the search item
+                    counter = counter + 1           'If they are the same, increment counter
+                End If
+            Next y
+        Next x
+        Return counter
+    End Function
+End Class
+
+
+==========================================================================================
+
+
+Public Class frmDeleteGame
+    Dim games As New ArrayList()            'Used for it's add and remove methods which aren't available with arrays
+    Dim lstGames As New ListBox
+    Dim lblHeading As New Label
+    Dim btnDelete, btnCancel As New Button
+    Private Sub frmDeleteGame_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        'This activates when the player clicks the delete button on the main form
+        create_board()      'This creates the board
+        get_games()         'This looks in the "saved games" folder and gets a list of all files there
+    End Sub
+
+    Private Sub Cancel_Click(ByVal sender As Object, ByVal e As EventArgs)
+        frmMain.Show()  'This quits the form
+        Me.Close()
+    End Sub
+
+    Private Sub Delete_Click(ByVal sender As Object, ByVal e As EventArgs)
+        'This activates when the delete button is clicked
+        'It gets the selected item in the listbox and deletes the appropriate file
+        Dim index As Integer
+        Dim path As String = Application.StartupPath & "\saved games\"      'This is the path that all the game files are located in
+        index = lstGames.SelectedIndex                                      'This is the index of the selected item in the listbox
+        lstGames.Items.RemoveAt(index)                                      'This removes the item from the listbox
+        My.Computer.FileSystem.DeleteFile(path & games(index) & ".txt")     'This deletes the file
+        games.RemoveAt(index)                                               'an Arraylist has a RemoveAt method which is used here for efficiencys sake
+    End Sub
+
+    Private Sub create_board()
+        'This creates the board which is a simple listbox, lable and two buttons
+        Me.Size = New System.Drawing.Size(270, 450)                 'This sets the size of the form
+        Me.Text = "Delete Game"                                     'Set the text of the form
+        With lstGames                                               'Describe the listbox
+            .Size = New System.Drawing.Size(140, 250)
+            .Location = New System.Drawing.Point(50, 40)
+        End With
+        'Add to controls
+        Me.Controls.Add(lstGames)
+
+        With lblHeading                                             'Describe the heading lable
+            .Size = New System.Drawing.Size(200, 30)
+            .Location = New System.Drawing.Point(35, 10)
+            .Font = New System.Drawing.Font("standard", 13, FontStyle.Underline)
+            .Text = "Available Games"
+        End With
+        'Add to controls
+        Me.Controls.Add(lblHeading)
+
+        With btnCancel                                              'Describe the cancel button
+            .Location = New System.Drawing.Point(10, 320)
+            .Size = New System.Drawing.Size(115, 35)
+            .Font = New System.Drawing.Font("standard", 12, FontStyle.Regular)
+            .Text = "Cancel"
+        End With
+        'Add to controls
+        Me.Controls.Add(btnCancel)
+        'Add Click Event
+        AddHandler btnCancel.Click, AddressOf Cancel_Click
+
+        With btnDelete                                              'Describe the Delete button
+            .Location = New System.Drawing.Point(130, 320)
+            .Size = New System.Drawing.Size(115, 35)
+            .Font = New System.Drawing.Font("standard", 12, FontStyle.Regular)
+            .Text = "Delete"
+        End With
+        'Add to controls
+        Me.Controls.Add(btnDelete)
+        'Add Click Event
+        AddHandler btnDelete.Click, AddressOf Delete_Click
+    End Sub
+
+    Private Sub get_games()
+        'This sub looks in the saved games folder and makes a list of all the items there
+        'It adds these items to the listbox
+        Dim path As String = Application.StartupPath & "\saved games\"          'This is the folder that holds the score files
+        Dim name As String
+        Dim start As Integer                                                    'This is used to get just the text file name by cutting out the file path
+        start = path.Length + 1
+        For Each foundfile As String In My.Computer.FileSystem.GetFiles(path)   'This iterates through the files in the folder
+            name = Mid(foundfile, start, foundfile.Length - start - 3)          'This selects just the Filename (without ".txt" on the end)
+            games.Add(name)                                                     'Arraylist's have a .Add method which is usefull
+            lstGames.Items.Add(name)                                            'Add name to the listbox
+        Next foundfile
+    End Sub
+End Class
